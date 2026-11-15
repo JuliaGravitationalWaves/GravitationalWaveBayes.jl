@@ -1,0 +1,53 @@
+name = "GravitationalWaveBayes"
+uuid = "bb89383c-bfde-40d4-a81c-ac32195f53dd"
+license = "GPL-3.0-or-later"
+version = "0.1.0"
+authors = ["Paul Hopkins <paul.hopkins256@gmail.com>"]
+description = "GPU-native, differentiable parameter estimation for gravitational-wave signals, with a custom batched NUTS sampler and Phenom/EOB waveform models."
+
+[deps]
+DelimitedFiles = "8bb1440f-4735-579b-a4ab-409b98df4dab"
+Enzyme = "7da242da-08ed-463a-9acd-ee780be4f1d9"
+FFTW = "7a1cc6ca-52ef-59f5-83cd-3a7055c09341"
+GravitationalWaveData = "d4636edc-8908-4226-933a-005f27205ddf"
+GravitationalWaveforms = "203c5322-2995-43d3-9215-1ac0b1a32352"
+KernelAbstractions = "63c18a36-062a-441e-b654-da1e3ab1ce7c"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+SHA = "ea8e919c-243c-51af-8825-aaa63cd721ce"
+Serialization = "9e88b42a-f829-5b0c-bbe9-9e923198166b"
+StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
+Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
+TOML = "fa267f1f-6049-4f14-aa54-33bafae1ed76"
+
+[weakdeps]
+CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
+
+[extensions]
+GravitationalWaveBayesCUDAExt = "CUDA"
+
+[compat]
+Aqua = "0.8"
+CUDA = "6.4"
+DelimitedFiles = "1"
+Enzyme = "0.13.216"
+FFTW = "1.10.0"
+GravitationalWaveData = "0.1"
+GravitationalWaveforms = "0.1"
+KernelAbstractions = "0.9.42"
+LinearAlgebra = "1"
+Random = "1"
+SHA = "0.7, 1"
+Serialization = "1"
+StaticArrays = "1.9.19"
+Statistics = "1"
+TOML = "1"
+Test = "1"
+julia = "1.13"
+
+[extras]
+Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Aqua", "Test"]

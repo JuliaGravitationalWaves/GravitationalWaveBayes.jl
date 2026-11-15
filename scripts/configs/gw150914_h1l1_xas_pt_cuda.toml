@@ -1,0 +1,71 @@
+# Real GW150914 (H1+L1) XAS PT pass 1 on CUDA (2026-09-30): gw150914_h1l1_xas_pt.toml with device = "cuda"
+# (bin-parallel XAS likelihood + gradient, `xas_binparallel_logp_and_grad`). Same seed and settings as the CPU run.
+#   julia -t 12 --project=<env with CUDA> scripts/run_from_config.jl scripts/configs/gw150914_h1l1_xas_pt_cuda.toml
+
+[event]
+trigger_time = 1126259462.4
+duration = 4.0
+post_trigger = 2.0
+psd_segment = 1024.0
+f_min = 20.0
+f_max = 512.0
+alpha = 0.2
+psd_method = "median"
+
+[[detectors]]
+name = "H1"
+strain_path = "data/H-H1_LOSC_4_V1-1126256640-4096.hdf5"
+
+[[detectors]]
+name = "L1"
+strain_path = "data/L-L1_LOSC_4_V1-1126256640-4096.hdf5"
+
+[model]
+name = "IMRPhenomXAS"
+
+[prior]
+mc = [20.0, 40.0]
+q = [0.25, 1.0]
+chi1 = [-0.9, 0.9]
+chi2 = [-0.9, 0.9]
+dL = [0.05, 1.5]
+t_c = [-0.05, 0.05]
+distance = "volume"
+masses = "components"
+
+[likelihood]
+marginalize_phase = true
+marginalize_distance = true
+time_ref_frequency = 35.0
+time_ref_offset = 0.12283266110168832
+time_reference = "H1"
+
+[sampler]
+type = "nuts"
+nwalkers = 8
+nsteps = 500
+nwarmup = 250
+step_size = 1e-4
+max_treedepth = 7
+device = "cuda"
+seed = 42
+enforce_bounds = true
+gradient_mode = "auto"
+init = "prior"
+jumps = true
+de_jumps = true
+pt_ntemps = 5
+pt_beta_min = 0.02
+quorum_frac = 0.8
+init_scale = 0.005
+adapt_mass = true
+dense_mass = true
+hessian_init = true
+cull_logp_gap = 50.0
+mass_init_buffer = 15
+mass_base_window = 20
+mass_term_buffer = 15
+
+[output]
+dir = "runs/gw150914_h1l1_xas_pt_cuda"
+record_chain = true

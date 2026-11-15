@@ -1,0 +1,19 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it using these metadata."
+type: software
+title: "GravitationalWaveBayes.jl"
+abstract: "GPU-native, differentiable Bayesian parameter estimation for gravitational-wave signals: batched likelihoods as KernelAbstractions kernels, Enzyme gradients, and batched NUTS, parallel-tempering and SMC samplers."
+authors:
+  - family-names: "Hopkins"
+    given-names: "Paul"
+    affiliation: "Independent Researcher, Forest of Dean, UK"
+version: "0.1.0"
+license: GPL-3.0-or-later
+repository-code: "https://github.com/JuliaGravitationalWaves/GravitationalWaveBayes.jl"
+url: "https://juliagravitationalwaves.github.io/GravitationalWaveBayes.jl/stable/"
+keywords:
+  - gravitational waves
+  - Julia
+  - Bayesian inference
+  - GPU
+  - automatic differentiation

@@ -1,0 +1,89 @@
+# 2026-10-13 BEST COMBINATION (XHM): random walk + GPU flow to beta = 1 (no NUTS), batched tries (5120), phase at 50 Hz, max 150 RW draws, flow 1000 x 4096.
+# 2026-10-12 matched-gw150914 SPEED run, HYBRID sampler variant (user request): IMRPhenomXHM (aligned spins, higher modes) on the matched GWTC-2.1
+# data (16 kHz -> 2048 Hz strain, release BayesWave PSDs, 20-896 Hz, trigger .391), NO calibration, the narrow priors of arXiv 2609.31118 (mlgw-jax + BlackJax-NS, GW150914 ~12 min on an A100): mc 26-33, q 0.6-1, chi +-0.4.
+# t_c window +-0.1 s (GWTC-2.1's and the JAX paper's geocent-time width) around t_ref (80 Hz; offset from the matched
+# runs). Timing benchmark -- no published aligned-spin posterior to compare.
+[event]
+trigger_time = 1126259462.391
+duration = 4.0
+post_trigger = 2.0
+f_min = 20.0
+f_max = 896.0
+alpha = 0.2
+
+[[detectors]]
+name = "H1"
+strain_path = "data/H-H1_GWOSC_16KHZ_R1-1126259447-32_lal2048.hdf5"
+psd_file = "data/gwtc21_gw150914/psd_H1.txt"
+
+[[detectors]]
+name = "L1"
+strain_path = "data/L-L1_GWOSC_16KHZ_R1-1126259447-32_lal2048.hdf5"
+psd_file = "data/gwtc21_gw150914/psd_L1.txt"
+
+[model]
+name = "IMRPhenomXHM"
+
+[prior]
+mc = [26.0, 33.0]
+q = [0.6, 1.0]
+chi1 = [-0.4, 0.4]
+chi2 = [-0.4, 0.4]
+dL = [0.01, 10.0]
+t_c = [-0.1, 0.1]
+distance = "volume"
+masses = "components"
+
+[likelihood]
+marginalize_phase = false
+marginalize_distance = true
+time_ref_frequency = 80.0
+time_ref_offset = -0.0204
+time_reference = "H1"
+# (2026-10-13) the sampled phase is the phase at 50 Hz (RW stages 3-4x fewer draws)
+phase_ref_frequency = 50.0
+
+[sampler]
+type = "nuts"
+method = "smc"
+nwalkers = 1024
+nsteps = 20
+nwarmup = 0
+step_size = 1e-4
+max_treedepth = 7
+device = "cuda"
+seed = 44
+enforce_bounds = true
+gradient_mode = "auto"
+init = "prior"
+smc_nfinal = 10
+# (2026-10-13) NO NUTS: likelihood-only random-walk SMC with the GPU online flow, phase shear and sky-ring / inclination moves all the way to beta = 1 and in the final draws (value-only likelihood, 4x cheaper than the gradient for SEOBNRv5HM)
+smc_moves = "rw"
+# (2026-10-13) at most 150 draws per stage: the beta ~0.05 stage never passes the displacement test in t_c (a mixture of
+# narrow modes, row 6 moves 0.3-0.4 sd in 400 draws); the flow jumps (~2% x 10 tries per draw) do the mixing
+smc_max_mutate = 150
+smc_rw_thin = 40
+smc_online_kde = true
+smc_independence_tries = 10
+# (2026-10-13) all 10 tries of a draw in 2 value-only device calls 5120 walkers wide (V100: SEOBNRv5HM 0.075 vs 0.125 ms/walker at 1024; XHM 0.0062 vs 0.0111)
+smc_ind_batch = 5120
+smc_phase_shear = 140.0
+smc_sky_ring = true
+smc_sky_phase = -1
+smc_incl_flip = "neg"
+smc_online_flow = true
+smc_online_pool_max = 32768
+smc_flow_layers = 8
+smc_flow_hidden = 64
+# (2026-10-13) flow training: 1000 steps of 4096-state minibatches (was 3000 x 512; a GPU step is launch-bound)
+smc_flow_steps = 1000
+smc_flow_batch = 4096
+# (2026-10-12) online flow warm-started from the previous stage and trained / evaluated on the GPU
+smc_flow_warm = true
+smc_flow_device = true
+quorum_frac = 0.8
+smc_dump_stages = true
+
+[output]
+dir = "runs/v100_20261013/gw150914_h1l1_xhm_speed_jaxprior_best_s44_cuda"
+record_chain = true

@@ -1,0 +1,92 @@
+# CALIBRATION MARGINALIZED (2026-10-12, user: bring the XPHM-223 matched runs toward ~4 h; sampled R2 took 8.5 h).
+# 2026-10-11 (matched-gw150914 R2): IMRPhenomXPHM PrecVersion 223 (MSA, as GWTC-2.1) fully matched to GWTC-2.1
+# C01:IMRPhenomXPHM: data (16 kHz -> 2048 Hz LAL, release PSDs x window factor, 20-896 Hz, trigger .391), LVK priors,
+# spline calibration sampled (40 standard-normal rows, the release's node priors). Compare with the release's
+# `_mixed_nocosmo` C01:IMRPhenomXPHM samples (no reweighting). Sampler: the PHM big-flow hybrid (RW -> NUTS at beta
+# 0.05) without phase_ref_frequency (PHM-only; the XPHM phase is referred to 20 Hz like LVK's).
+# t_ref window: XPHM t_ref(80 Hz) frame; offset -0.0204 = -median(t_c(H1) + t*(80 Hz, XHM)) over the GWTC-2.1 XPHM
+# posterior (spread +-1 ms; scratch toff.jl, 2026-10-11) -- still check the stage dumps.
+[event]
+trigger_time = 1126259462.391
+duration = 4.0
+post_trigger = 2.0
+f_min = 20.0
+f_max = 896.0
+alpha = 0.2
+
+[[detectors]]
+name = "H1"
+strain_path = "data/H-H1_GWOSC_16KHZ_R1-1126259447-32_lal2048.hdf5"
+psd_file = "data/gwtc21_gw150914/psd_H1.txt"
+
+[[detectors]]
+name = "L1"
+strain_path = "data/L-L1_GWOSC_16KHZ_R1-1126259447-32_lal2048.hdf5"
+psd_file = "data/gwtc21_gw150914/psd_L1.txt"
+
+[model]
+name = "IMRPhenomXPHM"
+prec_version = 223
+
+[prior]
+# LVK (GWTC-2.1 C01:IMRPhenomXPHM sampling prior, data/gwtc21_gw150914/priors.toml): uniform in detector-frame
+# component masses with M_c in [21.418, 41.974], q in [0.05, 1]; d_L^2 on [10, 10000] Mpc; spins uniform magnitude
+# on [0, 0.99], isotropic (sampled as y in the unit ball, chi = 0.99 |y|^2 y). t_c window as the PHM runs.
+mc = [21.418182160215295, 41.97447913941358]
+q = [0.05, 1.0]
+dL = [0.01, 10.0]
+t_c = [-0.05, 0.05]
+distance = "volume"
+masses = "components"
+spins = "isotropic"
+spin_max = 0.99
+
+[calibration]
+priors = "data/gwtc21_gw150914/priors.toml"
+mode = "marginalize"      # bilby calibration_marginalization (Payne et al. 2020): 1000 prior response curves
+ncurves = 1000
+curve_seed = 1
+
+[likelihood]
+marginalize_phase = false
+marginalize_distance = true
+time_ref_frequency = 80.0
+time_ref_offset = -0.0204
+time_reference = "H1"
+
+[sampler]
+type = "nuts"
+method = "smc"
+nwalkers = 1024
+nsteps = 20
+nwarmup = 0
+step_size = 1e-4
+max_treedepth = 7
+device = "cuda"
+seed = 44
+enforce_bounds = true
+gradient_mode = "auto"
+init = "prior"
+smc_nfinal = 10
+smc_moves = "rw"
+smc_max_mutate = 400
+smc_rw_thin = 40
+smc_online_kde = true
+smc_independence_tries = 10
+smc_phase_shear = 140.0
+smc_sky_ring = true
+smc_sky_phase = -1
+smc_incl_flip = "neg"
+smc_online_flow = true
+smc_online_pool_max = 32768
+smc_flow_layers = 8
+smc_flow_hidden = 64
+smc_flow_steps = 3000
+smc_nuts_beta = 0.05
+smc_nuts_max_mutate = 60
+quorum_frac = 0.8
+smc_dump_stages = true
+
+[output]
+dir = "runs/v100_20261011/gw150914_h1l1_xphm223_r2_matched_calmarg_s44_cuda"
+record_chain = true

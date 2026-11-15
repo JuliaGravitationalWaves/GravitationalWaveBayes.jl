@@ -1,0 +1,129 @@
+# 2026-10-10 (night): zero-noise SEOBNRv5PHM injection with strong precession (q 0.6, in-plane chi1 0.6, theta_jn 1.0: an inclined
+# system where precession is visible), recovered with the best sampler; companion of inj_seobnrv5phm_gw150914like_bigflow_s44_cuda.toml.
+# 2026-10-10 (night): zero-noise SEOBNRv5PHM injection on the real GW150914 PSDs, recovered with the best sampler (gw150914_h1l1_seobnrv5phm_smc_hyb_tref80_phi50_skyph_flip_bigflow_s44_cuda.toml):
+# GW150914-like masses / sky / distance with visible precession (in-plane spins 0.4 / 0.28 at 50 Hz). Validates the whole
+# pipeline on a known truth (the injection uses the likelihood's convention: scripts/check_phm_fref_convention.jl).
+# 2026-10-10 (08:30): gw150914_h1l1_seobnrv5phm_smc_hyb_tref80_phi50_skyph_flip_flow_cuda.toml (converged: KS <= 0.068 vs the hybrid reference) with a bigger flow trained on more states
+# (pool 32768, 8 layers x 64, 3000 steps) and seed 44: the flow acceptance fell to 1-2% in the late NUTS stages.
+# 2026-10-10 (night): gw150914_h1l1_seobnrv5phm_smc_hyb_tref80_phi50_shear_skyph_cuda.toml plus inclination flips (`smc_incl_flip = "neg"`, acceptance 6-8% at beta 0.1) and the
+# normalizing-flow online proposal (`smc_online_flow`, GravitationalWaveBayes.Flows: RealNVP 6 x 32, held-out early stopping; toy SMC
+# independence acceptance 0.67 vs the local KDE's ~0.05 on GW150914) trained on up to 8192 states per stage.
+# (05:20) smc_independence_tries 10: a flow jump costs one likelihood (~0.43 s per batch) vs ~31 s per NUTS draw (12
+# gradients); at ~8% acceptance 10 tries give ~0.8 accepted global jumps per particle per draw for ~14% more time.
+# 2026-10-10 (night): gw150914_h1l1_seobnrv5phm_smc_hyb_tref80_phi50_shear_sky_cuda.toml with phase-compensated sky-ring moves (`smc_sky_phase = -1`: the phase row shifted so the
+# (2,2) response phase at H1 is kept; scripts/check_sky_phase_move.jl on its stage-5 top particles: acceptance 0.52 vs
+# 0.23 uncompensated, 0.16 with sign +1). With the phase at 50 Hz the slowest row became the phase (0.35-0.46 per
+# NUTS stage): it is tied to sky / psi / inclination along a wrapped manifold.
+# (00:20) smc_nuts_max_mutate 60: with the phase compensated the NUTS stages move ~0.4 of the target in every row per
+# 20 draws (no single slow direction any more); 60 draws per stage (~14 min) lets them reach it.
+# 2026-10-10 (night): gw150914_h1l1_seobnrv5phm_smc_hyb_tref80_shear_sky_cuda.toml with the waveform reference (phase, spins, frame) at 50 Hz (`phase_ref_frequency`) instead of
+# the data's 20 Hz. The posterior's thin direction (whitened curvature 9850: mc +0.78, chi1z +0.38, q +0.31, phase -0.30,
+# scripts/local_curvature.jl) is inspiral phase coherence: a phase defined at 20 Hz couples to the masses through the
+# whole inspiral phase up to the band. The Hessian-augmented metric did not help (NUTS trajectories ~3 steps).
+# 2026-10-09 (night): gw150914_h1l1_seobnrv5phm_smc_rw_okdew_tref80_shear_sky_cuda.toml as a hybrid: random walk until beta 0.05, then NUTS (device gradient, tree depth 7, <= 20
+# draws per stage; `smc_nuts_beta`). Both RW seeds found the signal by beta ~0.05-0.065 and then capped every stage on mc
+# (cor(mc, chi1z) 0.59: the curved mass-spin manifold random walk crawls along).
+# 2026-10-09: gw150914_h1l1_seobnrv5phm_smc_rw_okdew_tref091_shear_sky_cuda.toml with time_ref_frequency 80 Hz (offset -0.0073, the same t_c frame). With 35 Hz the time row and mc
+# form a ridge (scripts/tref_ridge_slope.jl at the best stage-5 particle: d t_best / d mc = +5.7 ms/Msun at 35 Hz, +0.48 at
+# 60, -0.12 at 80, -0.32 at 100); both sky-ring seeds then stalled with t the slowest row at beta ~0.05-0.06.
+# 2026-10-09: gw150914_h1l1_seobnrv5phm_smc_rw_okdew_tref091_shear_cuda.toml plus sky-ring moves (`smc_sky_ring`: rotations about the H1-L1 baseline, one per RW draw). Both seeds
+# without them stalled with ra the slowest row (beta 0.06-0.08): the sky posterior is the H1-L1 time-delay ring.
+# 2026-10-09: gw150914_h1l1_seobnrv5phm_smc_rw_okdew_tref_shear_cuda.toml (prior start, RW + online KDE + t_ref + phase
+# shear 140 Hz) with time_ref_offset 0.091 instead of 0.172. With 0.172 the signal is at t_ref ~0.081 s, outside the
+# t_c = +-0.05 s window (XPHM -> PHM scan, scripts/find_reference_time_shift.jl; t* = -0.114 s at the XPHM posterior,
+# scripts/tstar_at_reference.jl, t_c = +0.023 s), and every prior-start run stalled at beta ~0.07-0.13 pressed against
+# t = 0.05. t_ref = t_c + t* + offset, so the offset that centres the window is 0.172 - 0.081 = 0.091 (a first try with
+# 0.253 had the sign wrong: signal at 0.162 s, population drifting to mc = 20 at t = 0.05 by beta 0.19).
+[event]
+trigger_time = 1126259462.4
+duration = 4.0
+post_trigger = 2.0
+psd_segment = 1024.0
+f_min = 20.0
+f_max = 512.0
+alpha = 0.2
+psd_method = "median"
+
+[[detectors]]
+name = "H1"
+strain_path = "data/H-H1_LOSC_4_V1-1126256640-4096.hdf5"
+
+[[detectors]]
+name = "L1"
+strain_path = "data/L-L1_LOSC_4_V1-1126256640-4096.hdf5"
+
+[model]
+name = "SEOBNRv5PHM"
+
+[prior]
+mc = [20.0, 40.0]
+q = [0.25, 1.0]
+chi1 = [-0.9, 0.9]
+chi2 = [-0.9, 0.9]
+dL = [0.05, 1.5]
+t_c = [-0.05, 0.05]
+distance = "volume"
+masses = "components"
+
+[likelihood]
+marginalize_phase = false
+marginalize_distance = true
+time_ref_frequency = 80.0
+time_ref_offset = -0.0073
+time_reference = "H1"
+phase_ref_frequency = 50.0
+
+[sampler]
+type = "nuts"
+method = "smc"
+nwalkers = 1024
+nsteps = 20
+nwarmup = 0
+step_size = 1e-4
+max_treedepth = 7
+device = "cuda"
+seed = 44
+enforce_bounds = true
+gradient_mode = "auto"
+init = "prior"
+smc_nfinal = 10
+smc_moves = "rw"
+smc_max_mutate = 400
+smc_rw_thin = 40
+smc_online_kde = true
+smc_independence_tries = 10
+smc_phase_shear = 140.0
+smc_sky_ring = true
+smc_sky_phase = -1
+smc_incl_flip = "neg"
+smc_online_flow = true
+smc_online_pool_max = 32768
+smc_flow_layers = 8
+smc_flow_hidden = 64
+smc_flow_steps = 3000
+smc_nuts_beta = 0.05
+smc_nuts_max_mutate = 60
+quorum_frac = 0.8
+smc_dump_stages = true
+
+[output]
+dir = "runs/v100_20261009/inj_seobnrv5phm_precessing_bigflow_s44_cuda"
+record_chain = true
+
+[injection]
+noise = false
+mc = 28.0
+q = 0.6
+chi1 = 0.2
+chi2 = 0.0
+chi1x = 0.6
+chi1y = 0.0
+chi2x = 0.1
+chi2y = -0.1
+dL = 0.45
+t_c = 0.023
+phase = 1.0
+ra = 1.95
+dec = -1.22
+theta_jn = 1.0
+psi = 0.5

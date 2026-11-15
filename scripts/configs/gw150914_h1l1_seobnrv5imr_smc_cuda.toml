@@ -1,0 +1,68 @@
+# 2026-10-03 (SEOBNR_GPU_PLAN.md M4): SEOBNRv5 IMR pass 2 (SMC) with the table, likelihood and gradient on the GPU
+# (`seobnr_device_closures`) and thousands of particles; otherwise the settings of the V100 pipeline's CPU pass 2
+# (runs/vast_v100_20261001/pipe_v100_pass2_seobnrv5imr_smc: 64 particles, 16 CPU threads), from the same XAS-RB GPU
+# pass-1 reference. Override nwalkers / output.dir as needed.
+#   LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu julia -t 8 --project=<env with CUDA> scripts/run_from_config.jl <this file>
+
+[event]
+trigger_time = 1126259462.4
+duration = 4.0
+post_trigger = 2.0
+psd_segment = 1024.0
+f_min = 20.0
+f_max = 512.0
+alpha = 0.2
+psd_method = "median"
+
+[[detectors]]
+name = "H1"
+strain_path = "data/H-H1_LOSC_4_V1-1126256640-4096.hdf5"
+
+[[detectors]]
+name = "L1"
+strain_path = "data/L-L1_LOSC_4_V1-1126256640-4096.hdf5"
+
+[model]
+name = "SEOBNRv5IMRAlignedSpinF2"
+
+[prior]
+mc = [20.0, 40.0]
+q = [0.25, 1.0]
+chi1 = [-0.9, 0.9]
+chi2 = [-0.9, 0.9]
+dL = [0.05, 1.5]
+t_c = [-0.05, 0.05]
+distance = "volume"
+masses = "components"
+
+[likelihood]
+marginalize_phase = true
+marginalize_distance = true
+time_ref_frequency = 35.0
+time_ref_offset = 0.12283266110168832
+time_reference = "H1"
+
+[sampler]
+type = "nuts"
+method = "smc"
+nwalkers = 4096
+nsteps = 500
+nwarmup = 200
+step_size = 1e-4
+max_treedepth = 7
+device = "cuda"
+smc_nfinal = 4
+smc_reference = "runs/pipe_v100_pass1_xasrb_cuda"
+smc_reference_inflate = 1.5
+smc_reference_alpha = 0.1
+smc_reference_kind = "kde"
+smc_independence = true
+mass_blocks = [[1, 2, 3, 4, 6], [8, 9, 10, 11]]
+seed = 42
+enforce_bounds = true
+gradient_mode = "reverse"
+quorum_frac = 0.8
+
+[output]
+dir = "runs/gw150914_h1l1_seobnrv5imr_smc_cuda4096"
+record_chain = true

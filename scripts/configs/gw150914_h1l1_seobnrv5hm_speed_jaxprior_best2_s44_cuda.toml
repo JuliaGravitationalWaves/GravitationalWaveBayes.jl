@@ -1,0 +1,107 @@
+# 2026-10-15 BEST2 (+ final tree depth 5, flow steps 500, 2026-10-15 evening: 1014 s SMC wall on an uncontended V100-SXM2):
+# 2026-10-15 BEST2: best_cess08 + smc_max_mutate 100, 5120-wide tries released before the first gradient, smc_final_ess 0.5
+# (seeds 44-46 on one contended V100-SXM2 box: mean 29.0 vs 35.0 min for best_cess08, posterior within seed scatter).
+# 2026-10-13 BEST COMBINATION of the 10-13 speed work: beta-0.8 hybrid, GPU flow, batched tries (2048), phase at 50 Hz, max 150 RW draws, flow 1000 x 4096.
+# 2026-10-12 matched-gw150914 SPEED run, HYBRID sampler variant (user request): SEOBNRv5HM (aligned spins, higher modes) on the matched GWTC-2.1
+# data (16 kHz -> 2048 Hz strain, release BayesWave PSDs, 20-896 Hz, trigger .391), NO calibration, the narrow priors of arXiv 2609.31118 (mlgw-jax + BlackJax-NS, GW150914 ~12 min on an A100): mc 26-33, q 0.6-1, chi +-0.4.
+# t_c window +-0.1 s (GWTC-2.1's and the JAX paper's geocent-time width) around t_ref (80 Hz; offset from the matched
+# runs). Timing benchmark -- no published aligned-spin posterior to compare.
+[event]
+trigger_time = 1126259462.391
+duration = 4.0
+post_trigger = 2.0
+f_min = 20.0
+f_max = 896.0
+alpha = 0.2
+
+[[detectors]]
+name = "H1"
+strain_path = "data/H-H1_GWOSC_16KHZ_R1-1126259447-32_lal2048.hdf5"
+psd_file = "data/gwtc21_gw150914/psd_H1.txt"
+
+[[detectors]]
+name = "L1"
+strain_path = "data/L-L1_GWOSC_16KHZ_R1-1126259447-32_lal2048.hdf5"
+psd_file = "data/gwtc21_gw150914/psd_L1.txt"
+
+[model]
+name = "SEOBNRv5HM"
+
+[prior]
+mc = [26.0, 33.0]
+q = [0.6, 1.0]
+chi1 = [-0.4, 0.4]
+chi2 = [-0.4, 0.4]
+dL = [0.01, 10.0]
+t_c = [-0.1, 0.1]
+distance = "volume"
+masses = "components"
+
+[likelihood]
+marginalize_phase = false
+marginalize_distance = true
+time_ref_frequency = 80.0
+time_ref_offset = -0.0163
+time_reference = "H1"
+# (2026-10-13) the sampled phase is the (2,2) orbital phase at 50 Hz
+phase_ref_frequency = 50.0
+
+[sampler]
+
+smc_final_ess = 0.5
+smc_ind_release = true
+type = "nuts"
+method = "smc"
+nwalkers = 1024
+nsteps = 20
+nwarmup = 0
+step_size = 1e-4
+max_treedepth = 7
+device = "cuda"
+seed = 44
+enforce_bounds = true
+gradient_mode = "auto"
+init = "prior"
+smc_nfinal = 10
+# (2026-10-15 evening) recorded beta = 1 phase at tree depth 5 (ladder keeps 7): final phase 412 -> 220 s, per-row ESS
+# 0.75-1.03x, ESS/s +58%, KS 0.017 (A/B run ab_td5; depth 6 is non-binding with quorum_frac 0.8)
+smc_final_max_treedepth = 5
+# (2026-10-13) smaller beta steps (CESS 0.8 instead of 0.5): with the phase at 50 Hz the first step jumped to beta 0.067
+# and logZ came out ~8 low (posterior fine) -- does a finer ladder recover it?
+smc_target_cess = 0.8
+# NUTS hand-over at beta = 0.8 (RW likelihoods value-only, flow on the GPU: the RW is now cheap; SEOBNRv5HM is gradient-bound) (with the value-only likelihood in the RW stages, d402c4d); otherwise the hybrid sampler of the converged SEOBNRv5PHM runs (R1/R3): likelihood-only random-walk stages with the online
+# normalizing flow, phase shear and sky-ring / inclination moves up to beta = 0.05, NUTS (+ the same moves) after
+smc_moves = "rw"
+# (2026-10-13) at most 150 draws per random-walk stage (the beta ~0.05 stage cannot pass the displacement test in t_c)
+# (2026-10-15) 100 draws for the beta ~0.05 t_c stage (was 150)
+smc_max_mutate = 100
+smc_rw_thin = 40
+smc_online_kde = true
+smc_independence_tries = 10
+# (2026-10-13) all 10 tries of a draw in 5 value-only device calls 2048 walkers wide (V100: 0.093 vs 0.125 ms/walker at 1024;
+# 5120 wide ran out of memory at the first NUTS stage: the forward gradient kernels reserve ~40 KB of stack per resident thread)
+# (2026-10-15) 5120 wide: fits on 16 GB with smc_ind_release
+smc_ind_batch = 5120
+smc_phase_shear = 140.0
+smc_sky_ring = true
+smc_sky_phase = -1
+smc_incl_flip = "neg"
+smc_online_flow = true
+smc_online_pool_max = 32768
+smc_flow_layers = 8
+smc_flow_hidden = 64
+# (2026-10-13) flow training 1000 x 4096-state minibatches
+# (2026-10-15 evening) 500 steps: flow fits 179 -> 103 s per run, independence acceptance unchanged (A/B run ab_fs500)
+smc_flow_steps = 500
+smc_flow_batch = 4096
+# (2026-10-12) online flow warm-started from the previous stage and trained / evaluated on the GPU
+smc_flow_warm = true
+smc_flow_device = true
+smc_nuts_beta = 0.8
+smc_nuts_max_mutate = 60
+quorum_frac = 0.8
+smc_dump_stages = true
+
+[output]
+dir = "runs/v100/gw150914_h1l1_seobnrv5hm_speed_jaxprior_best2_s44_cuda"
+record_chain = true

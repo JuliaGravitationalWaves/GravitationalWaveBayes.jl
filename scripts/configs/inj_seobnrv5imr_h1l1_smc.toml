@@ -1,0 +1,77 @@
+# SEOBNRv5 IMR injection (same signal/noise as inj_seobnrv5imr_h1l1_margall_fref_pt6) recovered with
+# SEOBNRv5 IMR by adaptive tempered SMC FROM THE PRIOR: 64 particles, CESS-adapted beta schedule, NUTS
+# mutations with a population block-dense metric, evidence estimate. The SMC-vs-PT comparison run.
+#   julia -t 8 --project=. scripts/run_from_config.jl scripts/configs/inj_seobnrv5imr_h1l1_smc.toml
+
+[event]
+trigger_time = 1126259462.4
+duration = 4.0
+post_trigger = 2.0
+psd_segment = 1024.0
+f_min = 20.0
+f_max = 512.0
+alpha = 0.2
+psd_method = "median"
+
+[[detectors]]
+name = "H1"
+strain_path = "data/H-H1_LOSC_4_V1-1126256640-4096.hdf5"
+
+[[detectors]]
+name = "L1"
+strain_path = "data/L-L1_LOSC_4_V1-1126256640-4096.hdf5"
+
+[model]
+name = "SEOBNRv5IMRAlignedSpinF2"
+
+[injection]
+mc = 20.0
+q = 0.8
+chi1 = 0.3
+chi2 = 0.1
+dL = 0.7
+t_c = 0.0
+phase = 1.0
+ra = 1.95
+dec = -1.2
+theta_jn = 0.5
+psi = 1.0
+noise = true
+seed = 11
+
+[prior]
+mc = [15.0, 27.0]
+q = [0.3, 1.0]
+chi1 = [-0.8, 0.8]
+chi2 = [-0.8, 0.8]
+dL = [0.05, 2.0]
+t_c = [-0.05, 0.05]
+distance = "volume"
+masses = "components"
+
+[likelihood]
+marginalize_phase = true
+marginalize_distance = true
+time_ref_frequency = 35.0
+time_ref_offset = "auto"
+time_reference = "H1"
+
+[sampler]
+type = "nuts"
+method = "smc"
+nwalkers = 64
+nsteps = 500
+nwarmup = 200
+step_size = 1e-4
+max_treedepth = 7
+device = "cpu"
+smc_nfinal = 20
+mass_blocks = [[1, 2, 3, 4, 6], [8, 9, 10, 11]]
+seed = 42
+enforce_bounds = true
+gradient_mode = "reverse"
+quorum_frac = 0.8
+
+[output]
+dir = "runs/inj_seobnrv5imr_h1l1_smc"
+record_chain = true

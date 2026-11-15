@@ -1,0 +1,13 @@
+.julia/
+*.jl.cov
+.vscode/
+data/*.hdf5
+GravitationalWaveBayesSysimage.so
+Manifest*.toml
+*.jl.*.cov
+*.jl.mem
+/docs/build/
+lcov.info
+__pycache__/
+*.pyc
+/runs/

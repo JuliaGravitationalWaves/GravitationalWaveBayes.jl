@@ -1,0 +1,60 @@
+# 2026-10-04 (IMRPhenom session): XAS pass 1 as SMC with 4096 particles on the V100 (dense, bin-parallel :fwd path) --
+# compare ESS / s with the 160-walker PT run runs/v100_20261003/gw150914_h1l1_xas_pt_long_fwd (min ESS ~4200 in 169 s
+# sampling). Same data, prior and likelihood options.
+#   julia -t 15 --project=<env with CUDA> scripts/run_from_config.jl scripts/configs/gw150914_h1l1_xas_smc4096_cuda.toml
+[event]
+trigger_time = 1126259462.4
+duration = 4.0
+post_trigger = 2.0
+psd_segment = 1024.0
+f_min = 20.0
+f_max = 512.0
+alpha = 0.2
+psd_method = "median"
+
+[[detectors]]
+name = "H1"
+strain_path = "data/H-H1_LOSC_4_V1-1126256640-4096.hdf5"
+
+[[detectors]]
+name = "L1"
+strain_path = "data/L-L1_LOSC_4_V1-1126256640-4096.hdf5"
+
+[model]
+name = "IMRPhenomXAS"
+
+[prior]
+mc = [20.0, 40.0]
+q = [0.25, 1.0]
+chi1 = [-0.9, 0.9]
+chi2 = [-0.9, 0.9]
+dL = [0.05, 1.5]
+t_c = [-0.05, 0.05]
+distance = "volume"
+masses = "components"
+
+[likelihood]
+marginalize_phase = true
+marginalize_distance = true
+time_ref_frequency = 35.0
+time_ref_offset = 0.12283266110168832
+time_reference = "H1"
+
+[sampler]
+type = "nuts"
+method = "smc"
+nwalkers = 4096
+nsteps = 20
+nwarmup = 0
+step_size = 1e-4
+max_treedepth = 7
+device = "cuda"
+seed = 42
+enforce_bounds = true
+gradient_mode = "auto"
+init = "prior"
+smc_nfinal = 5
+
+[output]
+dir = "runs/v100_20261004/gw150914_h1l1_xas_smc4096_cuda"
+record_chain = true
