@@ -1,0 +1,62 @@
+# GW150914 SEOBNRv5PHM on the GPU as SMC with gradient-free random-walk moves (`smc_moves = "rw"`: adaptive
+# dense-covariance random-walk Metropolis; only the device likelihood `seobnr_phm_loglik` is compiled -- the PHM
+# gradient costs ~21 likelihoods). Data, prior and options as gw150914_h1l1_seobnrv5phm_smc1024_cuda.toml.
+#   JULIA_CUDA_HARD_MEMORY_LIMIT=... julia -t 8 --project=<env with CUDA> scripts/run_from_config.jl scripts/configs/gw150914_h1l1_seobnrv5phm_smc_rw_cuda.toml
+[event]
+trigger_time = 1126259462.4
+duration = 4.0
+post_trigger = 2.0
+psd_segment = 1024.0
+f_min = 20.0
+f_max = 512.0
+alpha = 0.2
+psd_method = "median"
+
+[[detectors]]
+name = "H1"
+strain_path = "data/H-H1_LOSC_4_V1-1126256640-4096.hdf5"
+
+[[detectors]]
+name = "L1"
+strain_path = "data/L-L1_LOSC_4_V1-1126256640-4096.hdf5"
+
+[model]
+name = "SEOBNRv5PHM"
+
+[prior]
+mc = [20.0, 40.0]
+q = [0.25, 1.0]
+chi1 = [-0.9, 0.9]
+chi2 = [-0.9, 0.9]
+dL = [0.05, 1.5]
+t_c = [-0.05, 0.05]
+distance = "volume"
+masses = "components"
+
+[likelihood]
+marginalize_phase = false
+marginalize_distance = true
+time_ref_frequency = 0.0
+time_reference = "H1"
+
+[sampler]
+type = "nuts"
+method = "smc"
+nwalkers = 1024
+nsteps = 20
+nwarmup = 0
+step_size = 1e-4
+max_treedepth = 7
+device = "cuda"
+seed = 42
+enforce_bounds = true
+gradient_mode = "auto"
+init = "prior"
+smc_nfinal = 10
+smc_moves = "rw"
+smc_max_mutate = 400
+smc_rw_thin = 40
+
+[output]
+dir = "runs/v100_20261008/gw150914_h1l1_seobnrv5phm_smc_rw_cuda"
+record_chain = true

@@ -1,0 +1,112 @@
+# Zero-noise SEOBNRv5PHM injection on the real GW150914 PSDs with strong precession (q 0.6, in-plane chi1 0.6,
+# theta_jn 1.0: an inclined system where precession is visible), recovered with the precessing-EOB SMC sampler.
+# Validates the whole pipeline on a known truth; the injection uses the likelihood's conventions.
+#
+# Sampler settings and why:
+# - Hybrid SMC: random walk until beta 0.05, then NUTS (device gradient, tree depth 7; `smc_nuts_beta`). Random walk
+#   alone crawls along the curved mass-spin manifold (cor(mc, chi1z) ~0.6).
+# - Waveform reference (phase, spins, frame) at 50 Hz (`phase_ref_frequency`) instead of the data's 20 Hz: a phase
+#   defined at 20 Hz couples to the masses through the whole inspiral, which makes the posterior's thin direction.
+# - time_ref_frequency 80 Hz: at lower reference frequencies the time row and mc form a ridge.
+# - Sky-ring moves (`smc_sky_ring`, rotations about the H1-L1 baseline) for the time-delay ring, with the phase
+#   compensated (`smc_sky_phase = -1`, keeping the (2,2) response phase at H1): acceptance ~0.5 vs ~0.2 uncompensated.
+# - Inclination flips (`smc_incl_flip = "neg"`).
+# - Normalizing-flow online proposal (`smc_online_flow`, GravitationalWaveBayes.Flows, RealNVP) trained on up to 32768
+#   states per stage (8 layers x 64, 3000 steps), with 10 independence tries per draw: a flow jump costs one
+#   likelihood against ~12 gradients for a NUTS draw.
+# - smc_nuts_max_mutate 60: with the phase compensated, the NUTS stages move ~0.4 of the target in every row per 20
+#   draws, so 60 draws per stage reach it.
+# - t_ref = t_c + t* + offset; the offset 0.091 centres the t_c = +-0.05 s window on the signal.
+[event]
+trigger_time = 1126259462.4
+duration = 4.0
+post_trigger = 2.0
+psd_segment = 1024.0
+f_min = 20.0
+f_max = 512.0
+alpha = 0.2
+psd_method = "median"
+
+[[detectors]]
+name = "H1"
+strain_path = "data/H-H1_LOSC_4_V1-1126256640-4096.hdf5"
+
+[[detectors]]
+name = "L1"
+strain_path = "data/L-L1_LOSC_4_V1-1126256640-4096.hdf5"
+
+[model]
+name = "SEOBNRv5PHM"
+
+[prior]
+mc = [20.0, 40.0]
+q = [0.25, 1.0]
+chi1 = [-0.9, 0.9]
+chi2 = [-0.9, 0.9]
+dL = [0.05, 1.5]
+t_c = [-0.05, 0.05]
+distance = "volume"
+masses = "components"
+
+[likelihood]
+marginalize_phase = false
+marginalize_distance = true
+time_ref_frequency = 80.0
+time_ref_offset = -0.0073
+time_reference = "H1"
+phase_ref_frequency = 50.0
+
+[sampler]
+type = "nuts"
+method = "smc"
+nwalkers = 1024
+nsteps = 20
+nwarmup = 0
+step_size = 1e-4
+max_treedepth = 7
+device = "cuda"
+seed = 44
+enforce_bounds = true
+gradient_mode = "auto"
+init = "prior"
+smc_nfinal = 10
+smc_moves = "rw"
+smc_max_mutate = 400
+smc_rw_thin = 40
+smc_online_kde = true
+smc_independence_tries = 10
+smc_phase_shear = 140.0
+smc_sky_ring = true
+smc_sky_phase = -1
+smc_incl_flip = "neg"
+smc_online_flow = true
+smc_online_pool_max = 32768
+smc_flow_layers = 8
+smc_flow_hidden = 64
+smc_flow_steps = 3000
+smc_nuts_beta = 0.05
+smc_nuts_max_mutate = 60
+quorum_frac = 0.8
+smc_dump_stages = true
+
+[output]
+dir = "runs/v100_20261009/inj_seobnrv5phm_precessing_bigflow_s44_cuda"
+record_chain = true
+
+[injection]
+noise = false
+mc = 28.0
+q = 0.6
+chi1 = 0.2
+chi2 = 0.0
+chi1x = 0.6
+chi1y = 0.0
+chi2x = 0.1
+chi2y = -0.1
+dL = 0.45
+t_c = 0.023
+phase = 1.0
+ra = 1.95
+dec = -1.22
+theta_jn = 1.0
+psi = 0.5

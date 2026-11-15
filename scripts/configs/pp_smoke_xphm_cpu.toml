@@ -1,0 +1,66 @@
+# P-P plumbing smoke test (scripts/pp_test.jl), CPU: IMRPhenomXPHM (223) with the paper's SMC recipe (random-walk moves,
+# t_ref at 80 Hz, H1 time reference, distance marginalization, LVK isotropic spins, sky-ring / inclination / phase moves)
+# at toy size (128 particles, short mutation runs, no flow: that one is device-only). Says nothing about calibration.
+#   julia -t 8 --project=. scripts/pp_test.jl scripts/configs/pp_smoke_xphm_cpu.toml 2 runs/pp_smoke_xphm
+[event]
+trigger_time = 1126259462.4
+duration = 4.0
+post_trigger = 2.0
+psd_segment = 1024.0
+f_min = 20.0
+f_max = 512.0
+alpha = 0.2
+psd_method = "median"
+
+[[detectors]]
+name = "H1"
+strain_path = "data/H-H1_LOSC_4_V1-1126256640-4096.hdf5"
+
+[[detectors]]
+name = "L1"
+strain_path = "data/L-L1_LOSC_4_V1-1126256640-4096.hdf5"
+
+[model]
+name = "IMRPhenomXPHM"
+prec_version = 223
+
+[prior]
+mc = [21.4, 42.0]
+q = [0.25, 1.0]
+dL = [0.1, 1.5]
+t_c = [-0.05, 0.05]
+distance = "volume"
+masses = "components"
+spins = "isotropic"
+spin_max = 0.99
+
+[likelihood]
+marginalize_distance = true
+time_ref_frequency = 80.0
+time_ref_offset = -0.0204
+time_reference = "H1"
+
+[sampler]
+type = "nuts"
+method = "smc"
+nwalkers = 128
+nsteps = 20
+nwarmup = 0
+step_size = 1e-4
+max_treedepth = 5
+device = "cpu"
+enforce_bounds = true
+init = "prior"
+smc_nfinal = 4
+smc_moves = "rw"
+smc_max_mutate = 10
+smc_rw_thin = 5
+smc_online_kde = true
+smc_independence_tries = 2
+smc_phase_shear = 140.0
+smc_sky_ring = true
+smc_sky_phase = -1
+smc_incl_flip = "neg"
+
+[output]
+record_chain = true

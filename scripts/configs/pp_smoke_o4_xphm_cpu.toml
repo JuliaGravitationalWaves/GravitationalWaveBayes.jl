@@ -1,0 +1,72 @@
+# CPU smoke test of pp_o4_xphm.toml (scripts/pp_test.jl plumbing before a GPU run): same
+# event / O4 detectors / prior / model / likelihood, sampler shrunk to toy size (128 particles, short mutation runs, NUTS
+# hand-over and flow left out: both are CUDA-only, the GPU pilot covers them). Says nothing about calibration.
+#   julia -t 8 --project=. scripts/pp_test.jl scripts/configs/pp_smoke_o4_xphm_cpu.toml 2 runs/pp_smoke_o4_xphm
+[event]
+trigger_time = 1126259462.4     # sets the sidereal time only; no real data is read
+duration = 4.0
+f_min = 20.0
+f_max = 1024.0
+
+[[detectors]]
+name = "H1"
+asd_file = "data/noise_curves/aligo_O4high.txt"   # LIGO-T2000012 O4 aLIGO (190 Mpc); synthetic detector
+
+[[detectors]]
+name = "L1"
+asd_file = "data/noise_curves/aligo_O4high.txt"
+
+[prior]
+# Romero-Shaw et al. 2020 (bilby validation, Sec. 3.2 / App. B) "4 s" prior set: M_c 12.3-45, q 0.125-1 (uniform in
+# both), spin magnitudes <= 0.88 isotropic, d_L 100-5000 Mpc. Their d_L prior is uniform in comoving source-frame volume;
+# ours is Euclidean (d_L^2, as GWTC-2.1's GW150914 sampling prior), which weights large distances more: with 5 Gpc at O4
+# the median network SNR is 4.1 (13% > 8), so d_L is capped at 2 Gpc (as in Wong, Isi & Edwards 2023, 0.3-2 Gpc):
+# median 10.4, 70% > 8, 41% > 12 (300 XPHM prior draws). Time window +-0.1 s (in the likelihood's t_ref frame).
+mc = [12.299703, 45.0]
+q = [0.125, 1.0]
+dL = [0.1, 2.0]
+t_c = [-0.1, 0.1]
+distance = "volume"
+masses = "uniform_mc_q"
+spins = "isotropic"
+spin_max = 0.88
+
+[model]
+name = "IMRPhenomXPHM"
+prec_version = 223
+
+[likelihood]
+marginalize_phase = false
+marginalize_distance = true
+time_ref_frequency = 80.0
+time_ref_offset = 0.0    # any constant: the P-P truths are drawn in this frame (no host t* for the precessing models)
+time_reference = "H1"
+
+[sampler]
+type = "nuts"
+method = "smc"
+nwalkers = 128
+nsteps = 20
+nwarmup = 0
+step_size = 1e-4
+max_treedepth = 5
+device = "cpu"
+enforce_bounds = true
+gradient_mode = "auto"
+init = "prior"
+smc_nfinal = 4
+smc_final_max_treedepth = 4
+smc_final_ess = 0.3
+smc_moves = "rw"
+smc_max_mutate = 10
+smc_rw_thin = 5
+smc_online_kde = true
+smc_independence_tries = 2
+smc_phase_shear = 140.0
+smc_sky_ring = true
+smc_sky_phase = -1
+smc_incl_flip = "neg"
+quorum_frac = 0.8
+
+[output]
+record_chain = true

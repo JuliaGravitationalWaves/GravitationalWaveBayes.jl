@@ -1,0 +1,87 @@
+# P-P test (scripts/pp_test.jl) for SEOBNRv5PHM: the Romero-Shaw et al. 2020 recipe (bilby validation: injections and
+# recovery from the same prior, Gaussian noise, H1+L1, no SNR cut) at O4 sensitivity (LVK observing-scenarios curve),
+# recovered with the sampler configuration of the matched GW150914 SEOBNRv5PHM analysis (sampler section unchanged; calibration dropped -- injections carry no calibration error; t_ref offset 0).
+#   julia -t <n> --project=<env> scripts/pp_test.jl scripts/configs/pp_o4_seobnrv5phm.toml <N> <outdir> [first_index]
+[event]
+trigger_time = 1126259462.4     # sets the sidereal time only; no real data is read
+duration = 4.0
+f_min = 20.0
+f_max = 1024.0
+
+[[detectors]]
+name = "H1"
+asd_file = "data/noise_curves/aligo_O4high.txt"   # LIGO-T2000012 O4 aLIGO (190 Mpc); synthetic detector
+
+[[detectors]]
+name = "L1"
+asd_file = "data/noise_curves/aligo_O4high.txt"
+
+[prior]
+# Romero-Shaw et al. 2020 (bilby validation, Sec. 3.2 / App. B) "4 s" prior set: M_c 12.3-45, q 0.125-1 (uniform in
+# both), spin magnitudes <= 0.88 isotropic, d_L 100-5000 Mpc. Their d_L prior is uniform in comoving source-frame volume;
+# ours is Euclidean (d_L^2, as GWTC-2.1's GW150914 sampling prior), which weights large distances more: with 5 Gpc at O4
+# the median network SNR is 4.1 (13% > 8), so d_L is capped at 2 Gpc (as in Wong, Isi & Edwards 2023, 0.3-2 Gpc):
+# median 10.4, 70% > 8, 41% > 12 (300 XPHM prior draws). Time window +-0.1 s (in the likelihood's t_ref frame).
+mc = [12.299703, 45.0]
+q = [0.125, 1.0]
+dL = [0.1, 2.0]
+t_c = [-0.1, 0.1]
+distance = "volume"
+masses = "uniform_mc_q"
+spins = "isotropic"
+spin_max = 0.88
+
+[model]
+name = "SEOBNRv5PHM"
+
+[likelihood]
+marginalize_phase = false
+marginalize_distance = true
+time_ref_frequency = 80.0
+time_ref_offset = 0.0    # any constant: the P-P truths are drawn in this frame (no host t* for the precessing models)
+time_reference = "H1"
+phase_ref_frequency = 50.0
+
+[sampler]
+type = "nuts"
+method = "smc"
+nwalkers = 1024
+nsteps = 20
+nwarmup = 0
+step_size = 1e-4
+max_treedepth = 7
+device = "cuda"
+enforce_bounds = true
+gradient_mode = "auto"
+init = "prior"
+smc_nfinal = 10
+# recorded beta = 1 phase at tree depth 5 (ladder keeps 7)
+smc_final_max_treedepth = 5
+# no short last stage: go to beta = 1 when ESS / N there >= 0.3 (must stay below target_cess 0.5)
+smc_final_ess = 0.3
+smc_moves = "rw"
+# 400 -> 100 RW draws per stage
+smc_max_mutate = 100
+smc_rw_thin = 40
+smc_online_kde = true
+smc_independence_tries = 10
+smc_phase_shear = 140.0
+smc_sky_ring = true
+smc_sky_phase = -1
+smc_incl_flip = "neg"
+smc_online_flow = true
+smc_online_pool_max = 32768
+smc_flow_layers = 8
+smc_flow_hidden = 64
+# GPU flow, warm-started, 500 x 4096 (was CPU, 3000 x 512)
+smc_flow_steps = 500
+smc_flow_batch = 4096
+smc_flow_warm = true
+smc_flow_device = true
+smc_nuts_beta = 0.05
+smc_nuts_max_mutate = 60
+quorum_frac = 0.8
+smc_dump_stages = false
+
+[output]
+record_chain = true

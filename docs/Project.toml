@@ -1,0 +1,10 @@
+[deps]
+Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
+GravitationalWaveBayes = "bb89383c-bfde-40d4-a81c-ac32195f53dd"
+
+[sources]
+GravitationalWaveBayes = {path = ".."}
+
+[compat]
+Documenter = "1"
+julia = "1.13"
